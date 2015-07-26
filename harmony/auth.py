@@ -108,6 +108,6 @@ def swap_auth_token(ip_address, port, token):
     """
     login_client = SwapAuthToken(token)
     login_client.connect(address=(ip_address, port),
-                         use_tls=False, use_ssl=False)
+                         use_tls=False)
     login_client.process(block=True)
     return login_client.uuid
