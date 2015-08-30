@@ -17,7 +17,6 @@ amp = Amp(HARMONY_IP, HARMONY_PORT, EMAIL, PASSWORD)
 kodi = Kodi(KODI_IP, KODI_PORT)
 
 
-
 print 'starting kodi'
 harmony.start_kodi(wait=True)
 

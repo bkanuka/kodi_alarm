@@ -24,23 +24,25 @@ class Harmony:
         return client
 
     def start_kodi(self, wait=True):
-        client = self.get_client()
+        try:
+            client = self.get_client()
 
-        current_activity = client.get_current_activity()
-        print "Current Activity:", current_activity
+            current_activity = client.get_current_activity()
+            print "Current Activity:", current_activity
 
-        config = client.get_config()
-        activity = [ act for act in config['activity'] if act['label'] == u'XBMC' ][0]
-        activity_id = int(activity['id'])
-        print "Activity Id:", activity_id
+            config = client.get_config()
+            activity = [ act for act in config['activity'] if act['label'] == u'XBMC' ][0]
+            activity_id = int(activity['id'])
+            print "Activity Id:", activity_id
 
-        start = False
-        if current_activity != activity_id:
-            print "Starting Kodi"
-            client.start_activity(activity_id)
-            start = True
+            start = False
+            if current_activity != activity_id:
+                print "Starting Kodi"
+                client.start_activity(activity_id)
+                start = True
 
-        client.disconnect(send_close=True)
+        finally:
+            client.disconnect(send_close=True)
 
         if start and wait:
             time.sleep(20)
