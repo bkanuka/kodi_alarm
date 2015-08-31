@@ -1,6 +1,7 @@
 import time
 from harmony import auth
 from harmony import client as harmony_client
+import multiprocessing
 
 class Harmony:
     def __init__(self, harmony_ip, harmony_port, email, password):
@@ -46,3 +47,30 @@ class Harmony:
 
         if start and wait:
             time.sleep(20)
+
+class HarmonyNB:
+    def __init__(self, harmony_ip, harmony_port, email, password):
+        conn1, conn2 = Pipe()
+
+        def worker_function(conn):
+            harmony = Harmony(harmony_ip, harmony_port, email, password)
+            while True:
+                try:
+                    command = conn.read()
+                    if command == "start_kodi_wait":
+                        harmony.start_kodi(wait=True)
+                    elif command == "start_kodi_nowait":
+                        harmony.start_kodi(wait=False)
+                except EOFError:
+                    break
+
+        worker = Process(target=worker_function, args=(conn2,))
+        worker.start()
+
+        self.conn = conn1
+
+        def start_kodi(self, wait=True):
+            if wait:
+                self.conn.send("start_kodi_wait")
+            else:
+                self.conn.send("start_kodi_nowait")
