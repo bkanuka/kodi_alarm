@@ -72,28 +72,40 @@ class AlarmNB:
         self.worker_conn = worker_conn1
 
     def start_kodi(self, wait=True):
-        self.worker_conn.send(("start_kodi", wait))
+        try:
+            self.worker_conn.send(("start_kodi", wait))
+        except IOError:
+            pass
 
     def set_volume(self, vol):
-        self.worker_conn.send(("set_vol", vol))
+        try:
+            self.worker_conn.send(("set_vol", vol))
+        except IOError:
+            pass
 
     def kodi_play(self, playlist="Nikta", shuffle=True):
-        self.worker_conn.send(("kodi_play", {"playlist": playlist, "shuffle": shuffle}))
+        try:
+            self.worker_conn.send(("kodi_play", {"playlist": playlist, "shuffle": shuffle}))
+        except IOError:
+            pass
 
     def start_rise(self, interval):
-        self.worker_conn.send(("start_rise", interval))
-
-    def start(self):
-        self.start_kodi()
-        self.set_volume(55)
-        self.kodi_play()
-        self.start_rise(20)
+        try:
+            self.worker_conn.send(("start_rise", interval))
+        except IOError:
+            pass
 
     def stop_rise(self):
-        self.worker_conn.send(("stop_rise", None))
+        try:
+            self.worker_conn.send(("stop_rise", None))
+        except IOError:
+            pass
 
     def close(self):
-        self.worker_conn.send(("stop_rise", None))
-        self.worker_conn.send(("close", None))
-        self.worker_conn.close()
+        try:
+            self.worker_conn.send(("stop_rise", None))
+            self.worker_conn.send(("close", None))
+            self.worker_conn.close()
+        except IOError:
+            pass
         self.worker.join()

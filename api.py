@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_restful import Resource, Api
 from alarm import AlarmNB
+import requests
 
 app = Flask(__name__)
 api = Api(app)
@@ -13,6 +14,12 @@ KODI_IP='kodi.home.bkanuka.com'
 KODI_PORT=8080
 
 alarm = AlarmNB(HARMONY_IP, HARMONY_PORT, EMAIL, PASSWORD, KODI_IP, KODI_PORT)
+
+class Ping(Resource):
+    def get(self):
+        return "PONG!"
+
+api.add_resource(Ping, '/alarm/ping')
 
 class Start(Resource):
     def get(self):
@@ -27,6 +34,16 @@ api.add_resource(Start, '/alarm/start')
 
 class Stop(Resource):
     def get(self):
+        message = {"id":1,
+        "jsonrpc":"2.0", 
+        "method":"GUI.ShowNotification", 
+        "params": {
+            "title": "Alarm",
+            "message": "Stopping Alarm"}
+        }
+
+        r = requests.post("http://192.168.1.11:8080/jsonrpc", json=message)
+
         alarm.stop_rise()
         alarm.set_volume(45)
         alarm.close()
