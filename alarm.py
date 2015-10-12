@@ -17,65 +17,98 @@ from  multiprocessing import Process
 #kodi = Kodi(KODI_IP, KODI_PORT)
 #kodi.play(playlist='Nikta', shuffle=True)
 
-def broker(ds_port="5558"):
+class Job:
+    def __init__(self, name, interval=0):
+        self.name = name
+        self.interval = interval
+
+    def start(self):
+        print "Starting Job: " + self.name
+
+    def run(self):
+        print "Running Job: " + self.name
+
+    def stop(self):
+        print "Stopping Job: " + self.name
+
+
+def broker(jobs, us_port=5557, ds_port=5558):
+
+    us_context = zmq.Context()
+    us_socket = us_context.socket(zmq.PAIR)
+    us_socket.connect("tcp://localhost:%s" % us_port)
+    print "Broker upstream port: ", us_port
+
     ds_context = zmq.Context()
     ds_socket = ds_context.socket(zmq.PUB)
-    ds_socket.bind("tcp://192.168.1.10:%s" % ds_port)
-    print "Broker server on port: ", ds_port
-    i = 0
+    ds_socket.bind("tcp://*:%s" % ds_port)
+    print "Broker downstream port: ", ds_port
+
+    run = False
+
     while True:
-        msg = str(i)
-        print "Publishing: " + msg
-        ds_socket.send(msg)
-        time.sleep(1)
-        i = i + 1
+        msg = us_socket.recv()
 
-    ds_socket.send("Exit")
-         
+        if msg == "Start":
+            if run:
+                us_socket.send_json(False)
+            else:
+                procs = [Process(target=client, args=(j,)) for j in jobs]
+                [p.start() for p in procs]
+                run = True
+                us_socket.send_json(True)
 
-def client(port_sub):
+        if msg == "Stop":
+            if not run:
+                us_socket.send_json(False)
+            else:
+                ds_socket.send("Stop")
+                us_socket.send_json(True)
+                time.sleep(3)
+
+                for p in procs:
+                    if p.is_alive():
+                        print "ERROR: TERMINATING PROCESS"
+                        p.terminate()
+
+                run = False
+
+def client(job, us_port=5558):
     context = zmq.Context()
     socket_sub = context.socket(zmq.SUB)
-    socket_sub.connect("tcp://192.168.1.10:%s" % port_sub)
-    print "Connected to broker with port %s" % port_sub
-    # Initialize poll set
-    #poller = zmq.Poller()
-    #poller.register(socket_sub, zmq.POLLIN)
+    socket_sub.setsockopt(zmq.SUBSCRIBE, '')
+    socket_sub.connect("tcp://localhost:%s" % us_port)
+    print "Connected to broker with port %s" % us_port
+
+    # Startup Things
+    job.start()
 
     run = True
     while run:
         print "Waiting for message"
-        print socket_sub.closed
-        message = socket_sub.recv()
-        #message = socket_sub.poll(timeout=5*1000)
-        print "Received"
-        print message
-        if message:
-
+        message_waiting = socket_sub.poll(timeout=job.interval*1000)
+        print "Received/Timeout"
+        if message_waiting:
             message = socket_sub.recv()
-        #socks = poller.poll(timeout=5*1000)
-        #print socks
-        #if socks:
-        #    socks = dict(socks)
-
-        #if socket_sub in socks and socks[socket_sub] == zmq.POLLIN:
-            #string = socket_sub.recv()
-            #topic, messagedata = string.split()
-            print "Processing ... ", message
-            if message == "Exit": 
-                print "Recieved exit command, client will stop recieving messages"
+            if message == "Stop":
+                print "Recieved stop command, client will stop recieving messages"
                 run = False
                 break
             else:
                 print "Received: " + message
-        
-    print "Exiting"
 
-        
+        # Do things
+        job.run()
+
+    # Stop things
+    job.stop()
+
+
 
 if __name__ == "__main__":
-    # Now we can run a few servers 
-    ds_port = "9999"
-    Process(target=broker, args=(ds_port,)).start()
-    time.sleep(1)
-    Process(target=client, args=(ds_port,)).start()
+    job1 = Job('job1', 3)
+    job2 = Job('job2', 4)
+
+    jobs = [job1, job2]
+
+    Process(target=broker, args=(jobs,)).start()

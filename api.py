@@ -1,37 +1,30 @@
 from flask import Flask
 from flask_restful import Resource, Api
+import zmq
 
 app = Flask(__name__)
 api = Api(app)
 
+ds_port = 5557
+ds_context = zmq.Context()
+ds_socket = ds_context.socket(zmq.PAIR)
+ds_socket.bind("tcp://*:%s" % ds_port)
+
 class Start(Resource):
     def get(self):
+        ds_socket.send("Start")
+        msg = ds_socket.recv_json()
+        return msg
 
-        EMAIL='bkanuka@gmail.com'
-        PASSWORD='lookout'
-        HARMONY_IP='HarmonyHub'
-        HARMONY_PORT=5222
-        KODI_IP='kodi.home.bkanuka.com'
-        KODI_PORT=8080
+api.add_resource(Start, '/start')
 
-        print 'init'
-        harmony=Harmony(HARMONY_IP, HARMONY_PORT, EMAIL, PASSWORD)
-        amp = Amp(HARMONY_IP, HARMONY_PORT, EMAIL, PASSWORD)
-        kodi = Kodi(KODI_IP, KODI_PORT)
+class Stop(Resource):
+    def get(self):
+        ds_socket.send("Stop")
+        msg = ds_socket.recv_json()
+        return msg
 
-
-        print 'starting kodi'
-        harmony.start_kodi(wait=True)
-
-        print 'setting volume'
-        amp.set_vol(55)
-
-        print 'playing'
-        kodi.play(playlist='Nikta', shuffle=True)
-
-        return True
-
-api.add_resource(Alarm, '/')
+api.add_resource(Stop, '/stop')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5554, debug=True, use_reloader=False)
