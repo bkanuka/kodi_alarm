@@ -4,13 +4,8 @@ from flask_restful import Resource, Api
 app = Flask(__name__)
 api = Api(app)
 
-class Alarm(Resource):
+class Start(Resource):
     def get(self):
-        import sys
-        import time
-        from harmony_control import Harmony
-        from kodi_control import Kodi
-        from amp_control import Amp
 
         EMAIL='bkanuka@gmail.com'
         PASSWORD='lookout'
