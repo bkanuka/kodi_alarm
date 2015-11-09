@@ -100,8 +100,8 @@ def client(job, us_port=5558):
 if __name__ == "__main__":
     from jobs import *
     startkodi = StartKodi()
-    #ampvolume = AmpVolume()
+    ampvolume = AmpVolume()
 
-    jobs = [startkodi, ]
+    jobs = [startkodi, ampvolume]
 
     Process(target=broker, args=(jobs,)).start()
