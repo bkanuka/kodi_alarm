@@ -18,9 +18,10 @@ from  multiprocessing import Process
 #kodi.play(playlist='Nikta', shuffle=True)
 
 class Job:
-    def __init__(self, name, interval=0):
+    def __init__(self, name, interval=0, maxitter=float('inf')):
         self.name = name
         self.interval = interval
+        self.maxitter = maxitter
 
     def start(self):
         print "Starting Job: " + self.name
@@ -64,7 +65,7 @@ def broker(jobs, us_port=5557, ds_port=5558):
             else:
                 ds_socket.send("Stop")
                 us_socket.send_json(True)
-                time.sleep(3)
+                time.sleep(4)
 
                 for p in procs:
                     if p.is_alive():
@@ -84,7 +85,8 @@ def client(job, us_port=5558):
     job.start()
 
     run = True
-    while run:
+    i = 0
+    while run and i < job.maxitter:
         print "Waiting for message"
         message_waiting = socket_sub.poll(timeout=job.interval*1000)
         print "Received/Timeout"
@@ -99,6 +101,7 @@ def client(job, us_port=5558):
 
         # Do things
         job.run()
+        i = i + 1
 
     # Stop things
     job.stop()
@@ -106,8 +109,8 @@ def client(job, us_port=5558):
 
 
 if __name__ == "__main__":
-    job1 = Job('job1', 3)
-    job2 = Job('job2', 4)
+    job1 = Job('job1', 3, 3)
+    job2 = Job('job2', 4, 4)
 
     jobs = [job1, job2]
 
