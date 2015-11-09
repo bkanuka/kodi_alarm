@@ -57,7 +57,7 @@ class AmpVolume(Job):
         print "AmpVolume: sleeping"
         time.sleep(20)
         print "AmpVolume: setting vol"
-        self.amp.set_vol(60)
+        self.amp.set_vol(50)
         print "AmpVolume: get client"
         self.client = self.amp.get_client()
 
@@ -68,6 +68,6 @@ class AmpVolume(Job):
     def stop(self):
         print "AmpVolume: disconnecting"
         self.client.disconnect(wait=True, send_close=True)
-        time.sleep(2)
-        print "AmpVolume: setting vol"
-        self.amp.set_vol(60)
+        #time.sleep(2)
+        #print "AmpVolume: setting vol"
+        #self.amp.set_vol(60)
