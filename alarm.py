@@ -5,20 +5,8 @@ import requests
 import zmq
 from  multiprocessing import Process
 
-#print 'init'
-
-#print 'starting kodi'
-#harmony.start_kodi(wait=True)
-
-#print 'setting volume'
-#amp.set_vol(60)
-
-#print 'playing'
-#kodi = Kodi(KODI_IP, KODI_PORT)
-#kodi.play(playlist='Nikta', shuffle=True)
-
 class Job:
-    def __init__(self, name, interval=0, maxitter=float('inf')):
+    def __init__(self, name, interval=5, maxitter=float('inf')):
         self.name = name
         self.interval = interval
         self.maxitter = maxitter
@@ -46,18 +34,19 @@ def broker(jobs, us_port=5557, ds_port=5558):
     print "Broker downstream port: ", ds_port
 
     run = False
+    procs = []
 
     while True:
         msg = us_socket.recv()
 
         if msg == "Start":
-            if run:
-                us_socket.send_json(False)
-            else:
+            if not run or not any([p.is_alive() for p in procs]):
                 procs = [Process(target=client, args=(j,)) for j in jobs]
                 [p.start() for p in procs]
                 run = True
                 us_socket.send_json(True)
+            else:
+                us_socket.send_json(False)
 
         if msg == "Stop":
             if not run:
@@ -109,9 +98,10 @@ def client(job, us_port=5558):
 
 
 if __name__ == "__main__":
-    job1 = Job('job1', 3, 3)
-    job2 = Job('job2', 4, 4)
+    from jobs import *
+    startkodi = StartKodi()
+    #ampvolume = AmpVolume()
 
-    jobs = [job1, job2]
+    jobs = [startkodi, ]
 
     Process(target=broker, args=(jobs,)).start()
