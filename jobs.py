@@ -3,6 +3,7 @@ import time
 import requests
 from alarm import Job
 from nadamp import Amp
+from kodi_control import Kodi
 
 #print 'init'
 
@@ -12,9 +13,6 @@ from nadamp import Amp
 #print 'setting volume'
 #amp.set_vol(60)
 
-#print 'playing'
-#kodi = Kodi(KODI_IP, KODI_PORT)
-#kodi.play(playlist='Nikta', shuffle=True)
 
 #class Job:
 #    def __init__(self, name, interval=5, maxitter=float('inf')):
@@ -46,6 +44,13 @@ class StartKodi(Job):
         r = requests.get(url, params=payload)
         print "StartKodi: " + r.text
 
+        print "StartKodi: sleeping"
+        time.sleep(15)
+
+        print 'playing'
+        kodi = Kodi('192.168.1.11', 8080)
+        kodi.play(playlist='Nikta', shuffle=True)
+
 
 class AmpVolume(Job):
     def __init__(self):
@@ -55,7 +60,7 @@ class AmpVolume(Job):
 
     def start(self):
         print "AmpVolume: sleeping"
-        time.sleep(20)
+        time.sleep(10)
         print "AmpVolume: setting vol"
         self.amp.set_vol(50)
         print "AmpVolume: get client"
@@ -68,6 +73,6 @@ class AmpVolume(Job):
     def stop(self):
         print "AmpVolume: disconnecting"
         self.client.disconnect(wait=True, send_close=True)
-        #time.sleep(2)
-        #print "AmpVolume: setting vol"
-        #self.amp.set_vol(60)
+        time.sleep(2)
+        print "AmpVolume: setting vol"
+        self.amp.set_vol(55)
