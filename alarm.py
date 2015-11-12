@@ -54,13 +54,19 @@ def broker(jobs, us_port=5557, ds_port=5558):
             else:
                 ds_socket.send("Stop")
                 us_socket.send_json(True)
-                time.sleep(20)
 
-                for p in procs:
-                    if p.is_alive():
-                        print "ERROR: TERMINATING PROCESS"
-                        p.terminate()
+                sleep_time = 0
+                while any([p.is_alive() for p in procs]):
+                    time.sleep(0.1)
+                    sleep_time = sleep_time + 0.1
 
+                    if sleep_time > 30:
+                        for p in procs:
+                            if p.is_alive():
+                                print "ERROR: TERMINATING PROCESS"
+                                p.terminate()
+
+                print "All processes stopped"
                 run = False
 
 def client(job, us_port=5558):
