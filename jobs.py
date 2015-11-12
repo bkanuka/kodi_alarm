@@ -60,7 +60,7 @@ class AmpVolume(Job):
 
     def start(self):
         print "AmpVolume: sleeping"
-        time.sleep(10)
+        time.sleep(15)
         print "AmpVolume: setting vol"
         self.amp.set_vol(50)
         print "AmpVolume: get client"

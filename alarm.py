@@ -54,7 +54,7 @@ def broker(jobs, us_port=5557, ds_port=5558):
             else:
                 ds_socket.send("Stop")
                 us_socket.send_json(True)
-                time.sleep(4)
+                time.sleep(20)
 
                 for p in procs:
                     if p.is_alive():
