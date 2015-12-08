@@ -6,16 +6,20 @@ import zmq
 from  multiprocessing import Process
 
 class Job:
-    def __init__(self, name, interval=5, maxitter=float('inf')):
+    def __init__(self, name, interval=5, maxitter=float('inf'), wait=False):
         self.name = name
         self.interval = interval
         self.maxitter = maxitter
+        self.wait = wait
 
     def start(self):
         print "Starting Job: " + self.name
 
     def run(self):
         print "Running Job: " + self.name
+
+    def after(self):
+        print "Cleaing up Job: " + self.name
 
     def stop(self):
         print "Stopping Job: " + self.name
@@ -33,8 +37,8 @@ def broker(jobs, us_port=5557, ds_port=5558):
     ds_socket.bind("tcp://*:%s" % ds_port)
     print "Broker downstream port: ", ds_port
 
-    run = False
     procs = []
+    run = False
 
     while True:
         msg = us_socket.recv()
@@ -52,6 +56,7 @@ def broker(jobs, us_port=5557, ds_port=5558):
             if not run:
                 us_socket.send_json(False)
             else:
+                print "Asking processes to stop"
                 ds_socket.send("Stop")
                 us_socket.send_json(True)
 
@@ -78,6 +83,8 @@ def client(job, us_port=5558):
 
     # Startup Things
     job.start()
+    start_time = time.time()
+    timeout = False
 
     run = True
     i = 0
@@ -98,7 +105,22 @@ def client(job, us_port=5558):
         job.run()
         i = i + 1
 
-    # Stop things
+    job.after()
+
+    while run and job.wait:
+        message_waiting = socket_sub.poll(timeout=100)
+        if message_waiting:
+            message = socket_sub.recv()
+            if message == "Stop":
+                print "Recieved stop command, client will stop recieving messages"
+                run = False
+                break
+        else:
+            if time.time() - start_time > 60*60:
+                run = False
+                timeout = True
+                break
+
     job.stop()
 
 
@@ -107,7 +129,9 @@ if __name__ == "__main__":
     from jobs import *
     startkodi = StartKodi()
     ampvolume = AmpVolume()
+    lights = Lights()
+    dashboard = Dashboard()
 
-    jobs = [startkodi, ampvolume]
+    jobs = [startkodi, ampvolume, lights, dashboard]
 
     Process(target=broker, args=(jobs,)).start()

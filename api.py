@@ -16,7 +16,7 @@ class Start(Resource):
         msg = ds_socket.recv_json()
         return msg
 
-api.add_resource(Start, '/start')
+api.add_resource(Start, '/alarm/start')
 
 class Stop(Resource):
     def get(self):
@@ -24,7 +24,7 @@ class Stop(Resource):
         msg = ds_socket.recv_json()
         return msg
 
-api.add_resource(Stop, '/stop')
+api.add_resource(Stop, '/alarm/stop')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5554, debug=True, use_reloader=False)
